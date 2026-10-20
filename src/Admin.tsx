@@ -10,6 +10,9 @@ const fieldClass =
 
 const toLabel = (key: string) => key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
 
+// Uploaded paths are `<uuid>-<name>`, so strip the 36-char uuid and dash.
+export const fileName = (url: string) => decodeURIComponent(url.split('/').pop() ?? '').slice(37);
+
 async function uploadImage(file: File) {
   const path = `${crypto.randomUUID()}-${file.name.replace(/[^\w.-]/g, '_')}`;
   const bucket = supabase!.storage.from('portfolio');
@@ -134,6 +137,25 @@ export function EditModal({ title, value, onSave, onClose }: { title: string; va
                     ))}
                   </div>
                   <input type="file" accept="image/*" multiple={Array.isArray(v)} disabled={busy} onChange={(e) => upload(key, e.target.files)} className="mt-2 block text-xs font-normal" />
+                </fieldset>
+              );
+            }
+            if (key === 'documentation') {
+              const urls = v as string[];
+              return (
+                <fieldset key={key} className="text-sm font-semibold">
+                  <legend>{label} <span className="font-normal text-ink/45">(PDF, Word, images…)</span></legend>
+                  <ul className="mt-1.5 space-y-1.5">
+                    {urls.map((url) => (
+                      <li key={url} className="flex items-center justify-between gap-2 rounded-lg border border-ink/10 px-3 py-2 font-normal">
+                        <span className="truncate">{fileName(url)}</span>
+                        <button type="button" aria-label="Remove file" onClick={() => set(key, urls.filter((u) => u !== url))} className="h-6 w-6 shrink-0 rounded-full bg-ink text-xs text-paper">
+                          ×
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <input type="file" multiple disabled={busy} onChange={(e) => upload(key, e.target.files)} className="mt-2 block text-xs font-normal" />
                 </fieldset>
               );
             }

@@ -2,7 +2,7 @@ import { useEffect, useState, type SVGProps } from 'react';
 import { createPortal } from 'react-dom';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
-import { AddButton, EditModal, ItemActions, LoginModal, type Item } from './Admin';
+import { AddButton, EditModal, ItemActions, LoginModal, fileName, type Item } from './Admin';
 
 type IconProps = SVGProps<SVGSVGElement>;
 
@@ -57,6 +57,7 @@ const projects = [
     accent: '#ff6b35',
     nodes: ['form', 'enrich', 'score', 'route'],
     images: [] as string[],
+    documentation: [] as string[],
   },
   {
     id: '02',
@@ -70,6 +71,7 @@ const projects = [
     accent: '#ff6b35',
     nodes: ['sign', 'create', 'notify', 'track'],
     images: [] as string[],
+    documentation: [] as string[],
   },
   {
     id: '03',
@@ -83,6 +85,7 @@ const projects = [
     accent: '#ff6b35',
     nodes: ['sync', 'clean', 'merge', 'report'],
     images: [] as string[],
+    documentation: [] as string[],
   },
   {
     id: '04',
@@ -96,6 +99,7 @@ const projects = [
     accent: '#ff6b35',
     nodes: ['listen', 'classify', 'draft', 'resolve'],
     images: [] as string[],
+    documentation: [] as string[],
   },
 ];
 
@@ -371,6 +375,61 @@ function ProjectImages({ images, title, imageClass = 'h-[245px]' }: { images: st
   );
 }
 
+// Office files can't render in an iframe directly, so they go through Microsoft's public viewer.
+const docSrc = (url: string) =>
+  /\.(docx?|pptx?|xlsx?)$/i.test(url) ? `https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}` : url;
+
+function DocsViewer({ project, onClose }: { project: (typeof projects)[number]; onClose: () => void }) {
+  const [index, setIndex] = useState(0);
+  const url = project.documentation[index];
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div role="dialog" aria-modal="true" aria-label={`${project.title} documentation`} onClick={onClose} className="fixed inset-0 z-[60] flex items-end justify-center bg-ink/70 p-0 backdrop-blur-sm md:items-center md:p-8">
+      <div onClick={(e) => e.stopPropagation()} className="flex h-[92vh] w-full max-w-[1000px] flex-col gap-4 rounded-t-[28px] bg-paper p-4 text-ink md:rounded-[28px] md:p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-mono text-xs uppercase tracking-[.16em] text-accent">Documentation</p>
+            <h3 className="truncate text-2xl font-semibold tracking-[-.04em]">{project.title}</h3>
+          </div>
+          <div className="flex shrink-0 gap-2">
+            <a href={url} target="_blank" rel="noreferrer" className="flex h-10 items-center rounded-full border border-ink/15 px-4 text-sm font-semibold transition hover:bg-ink hover:text-paper">
+              Open
+            </a>
+            <button type="button" aria-label="Close documentation" onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full bg-ink text-paper transition hover:bg-accent hover:text-ink">
+              <Close className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+        {project.documentation.length > 1 && (
+          <div className="flex flex-wrap gap-2">
+            {project.documentation.map((doc, n) => (
+              <button key={doc} type="button" onClick={() => setIndex(n)} className={`max-w-[240px] truncate rounded-full border px-3 py-1.5 text-sm ${n === index ? 'border-ink bg-ink text-paper' : 'border-ink/15'}`}>
+                {fileName(doc)}
+              </button>
+            ))}
+          </div>
+        )}
+        {/\.(png|jpe?g|gif|webp|svg)$/i.test(url) ? (
+          <img src={url} alt={fileName(url)} className="min-h-0 flex-1 rounded-2xl object-contain" />
+        ) : (
+          <iframe key={url} src={docSrc(url)} title={fileName(url)} className="min-h-0 w-full flex-1 rounded-2xl border border-ink/10 bg-white" />
+        )}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 function ProjectDetails({ project, onClose }: { project: (typeof projects)[number]; onClose: () => void }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -436,6 +495,7 @@ export default function App() {
   const [activeFilter, setActiveFilter] = useState('All platforms');
   const [menuOpen, setMenuOpen] = useState(false);
   const [openProject, setOpenProject] = useState<(typeof projects)[number] | null>(null);
+  const [openDocs, setOpenDocs] = useState<(typeof projects)[number] | null>(null);
   const [content, setContent] = useState<Content>(defaultContent);
   const [session, setSession] = useState<Session | null>(null);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -724,9 +784,16 @@ export default function App() {
                         </span>
                       ))}
                     </div>
-                    <button type="button" aria-label={`View ${project.title}`} onClick={() => setOpenProject(project)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-ink/15 transition group-hover:rotate-45 group-hover:bg-ink group-hover:text-paper">
-                      <ArrowUpRight className="h-5 w-5" />
-                    </button>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {!!project.documentation?.length && (
+                        <button type="button" onClick={() => setOpenDocs(project)} className="h-11 rounded-full border border-ink/15 px-4 text-sm font-semibold transition hover:bg-ink hover:text-paper">
+                          View documentation
+                        </button>
+                      )}
+                      <button type="button" aria-label={`View ${project.title}`} onClick={() => setOpenProject(project)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-ink/15 transition group-hover:rotate-45 group-hover:bg-ink group-hover:text-paper">
+                        <ArrowUpRight className="h-5 w-5" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </article>
@@ -734,6 +801,7 @@ export default function App() {
           </div>
           {addButton('projects')}
           {openProject && <ProjectDetails project={openProject} onClose={() => setOpenProject(null)} />}
+          {openDocs && <DocsViewer project={openDocs} onClose={() => setOpenDocs(null)} />}
         </section>
 
         <section id="skills" className="mx-auto max-w-[1400px] px-5 py-20 md:px-8 md:py-28">
@@ -846,7 +914,7 @@ export default function App() {
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-2">
                       <span className="text-sm text-ink/40">{certification.year}</span>
-                      {certification.ongoing && <span className="w-fit rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[.12em] text-accent">WIP</span>}
+                      {certification.ongoing && <span className="w-fit rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[.12em] text-accent">Ongoing</span>}
                     </div>
                   </div>
                   <p className="mt-3 max-w-[480px] leading-relaxed text-ink/50">{certification.detail}</p>
