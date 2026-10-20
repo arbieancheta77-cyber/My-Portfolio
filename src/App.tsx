@@ -129,18 +129,21 @@ const services = [
     title: 'Workflow automation',
     description: 'Reliable multi-step systems that remove repetitive work across your day-to-day operations.',
     tools: 'n8n · Make · Zapier',
+    images: [] as string[],
   },
   {
     number: '02',
     title: 'AI integration',
     description: 'Practical AI workflows for qualification, support, content, and intelligent decision-making.',
     tools: 'OpenAI · Claude · APIs',
+    images: [] as string[],
   },
   {
     number: '03',
     title: 'RPA development',
     description: 'Robotic process automation for rules-based, high-volume tasks across enterprise systems.',
     tools: 'UiPath · Data · Webhooks',
+    images: [] as string[],
   },
 ];
 
@@ -645,9 +648,9 @@ export default function App() {
               <div className="hero-orbit pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-paper/10">
                 <div className="absolute bottom-[82px] right-[62px] h-3 w-3 rounded-full bg-accent" />
               </div>
-              <div className="profile-photo-frame relative z-10 flex h-64 w-64 items-center justify-center rounded-full md:h-80 md:w-80">
+              <div className="profile-photo-frame relative z-10 flex h-64 w-64 items-center justify-center overflow-hidden rounded-full md:h-80 md:w-80">
                 {profile.photo ? (
-                  <img src={profile.photo} alt={`${profile.firstName} ${profile.lastName}`} className="h-full w-full object-cover" />
+                  <img src={profile.photo} alt={`${profile.firstName} ${profile.lastName}`} className="h-full w-full rounded-full object-cover" />
                 ) : (
                   <span className="text-7xl font-semibold tracking-[-.09em] text-paper/85">
                     {profile.firstName[0]}
@@ -673,11 +676,15 @@ export default function App() {
             {services.map((service, index) => (
               <article key={index} className="glass-panel group relative overflow-hidden rounded-[24px] border border-paper/55 p-5">
                 {actions('services', index)}
-                <div className="workflow-canvas flex min-h-52 items-end p-6">
-                  <div className="canvas-grid" />
-                  <span className="relative font-mono text-5xl text-accent">{service.number}</span>
-                  <WorkflowIcon className="absolute right-6 top-6 h-10 w-10 text-paper/25 transition group-hover:text-accent" />
-                </div>
+                {service.images?.length ? (
+                  <ProjectImages images={service.images} title={service.title} imageClass="h-52" />
+                ) : (
+                  <div className="workflow-canvas flex min-h-52 items-end p-6">
+                    <div className="canvas-grid" />
+                    <span className="relative font-mono text-5xl text-accent">{service.number}</span>
+                    <WorkflowIcon className="absolute right-6 top-6 h-10 w-10 text-paper/25 transition group-hover:text-accent" />
+                  </div>
+                )}
                 <h3 className="mt-6 text-2xl font-semibold tracking-[-.04em]">{service.title}</h3>
                 <p className="mt-3 leading-relaxed text-ink/55">{service.description}</p>
                 <p className="mt-6 font-mono text-[10px] uppercase tracking-[.1em] text-ink/40">{service.tools}</p>
@@ -785,10 +792,16 @@ export default function App() {
                       ))}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      {!!project.documentation?.length && (
+                      {project.documentation?.length ? (
                         <button type="button" onClick={() => setOpenDocs(project)} className="h-11 rounded-full border border-ink/15 px-4 text-sm font-semibold transition hover:bg-ink hover:text-paper">
                           View documentation
                         </button>
+                      ) : (
+                        isAdmin && (
+                          <button type="button" onClick={() => setEditing({ section: 'projects', index: projects.indexOf(project) })} className="h-11 rounded-full border-2 border-dashed border-ink/25 px-4 text-sm font-semibold transition hover:border-accent">
+                            + Add documentation
+                          </button>
+                        )
                       )}
                       <button type="button" aria-label={`View ${project.title}`} onClick={() => setOpenProject(project)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-ink/15 transition group-hover:rotate-45 group-hover:bg-ink group-hover:text-paper">
                         <ArrowUpRight className="h-5 w-5" />
