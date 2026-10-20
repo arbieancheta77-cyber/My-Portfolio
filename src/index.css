@@ -32,10 +32,8 @@ body {
 }
 
 .glass-nav {
-  background: color-mix(in srgb, var(--color-paper) 68%, transparent);
+  background: var(--color-paper);
   box-shadow: 0 8px 32px color-mix(in srgb, var(--color-ink) 5%, transparent);
-  backdrop-filter: blur(22px) saturate(140%);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
 }
 
 .glass-panel {
