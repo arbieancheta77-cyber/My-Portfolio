@@ -230,3 +230,9 @@ button {
     transition: none;
   }
 }
+
+/* thin, track-less scrollbar so it blends into the rounded project window */
+.modal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--color-ink) 25%, transparent) transparent;
+}

@@ -356,7 +356,7 @@ function ProjectImages({ images, title, imageClass = 'h-[245px]' }: { images: st
       {controls}
       {/* portal: card's backdrop-filter/transform would trap a fixed overlay */}
       {full && createPortal(
-        <div role="dialog" aria-modal="true" aria-label={`${title} images`} onClick={() => setFull(false)} className="fixed inset-0 z-50 flex items-center justify-center bg-ink/90 p-4 md:p-10">
+        <div role="dialog" aria-modal="true" aria-label={`${title} images`} onClick={() => setFull(false)} className="fixed inset-0 z-[70] flex items-center justify-center bg-ink/90 p-4 md:p-10">
           <div className="relative flex h-full w-full items-center justify-center" onClick={(e) => e.stopPropagation()}>
             <img src={images[i]} alt={`${title} screenshot ${i + 1}`} className="max-h-full max-w-full rounded-2xl object-contain" />
             <button type="button" aria-label="Close full view" onClick={() => setFull(false)} className={`${navButton} absolute right-3 top-3`}>
@@ -383,8 +383,8 @@ function ProjectDetails({ project, onClose }: { project: (typeof projects)[numbe
   }, [onClose]);
 
   return createPortal(
-    <div role="dialog" aria-modal="true" aria-label={project.title} onClick={onClose} className="fixed inset-0 z-40 flex items-end justify-center bg-ink/70 p-0 backdrop-blur-sm md:items-center md:p-8">
-      <div onClick={(e) => e.stopPropagation()} className="relative max-h-[92vh] w-full max-w-[900px] overflow-y-auto rounded-t-[28px] bg-paper p-4 text-ink md:rounded-[28px] md:p-6">
+    <div role="dialog" aria-modal="true" aria-label={project.title} onClick={onClose} className="fixed inset-0 z-[60] flex items-end justify-center bg-ink/70 p-0 backdrop-blur-sm md:items-center md:p-8">
+      <div onClick={(e) => e.stopPropagation()} className="modal-scroll relative max-h-[92vh] w-full max-w-[900px] overflow-y-auto rounded-t-[28px] bg-paper p-4 text-ink md:rounded-[28px] md:p-6">
         {project.images.length ? (
           <ProjectImages images={project.images} title={project.title} imageClass="h-[260px] md:h-[440px]" />
         ) : (
