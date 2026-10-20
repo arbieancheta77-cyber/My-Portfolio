@@ -1,4 +1,5 @@
 import { useEffect, useState, type SVGProps } from 'react';
+import { createPortal } from 'react-dom';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import { AddButton, EditModal, ItemActions, LoginModal, type Item } from './Admin';
@@ -147,6 +148,8 @@ const certifications = [
     year: '2025',
     accent: '#ff6b35',
     image: '',
+    tags: [] as string[],
+    ongoing: false,
   },
   {
     issuer: 'Make',
@@ -155,6 +158,8 @@ const certifications = [
     year: '2024',
     accent: '#ff6b35',
     image: '',
+    tags: [] as string[],
+    ongoing: false,
   },
   {
     issuer: 'UiPath',
@@ -163,6 +168,8 @@ const certifications = [
     year: '2024',
     accent: '#ff6b35',
     image: '',
+    tags: [] as string[],
+    ongoing: false,
   },
   {
     issuer: 'Zapier',
@@ -171,6 +178,8 @@ const certifications = [
     year: '2023',
     accent: '#ff6b35',
     image: '',
+    tags: [] as string[],
+    ongoing: false,
   },
 ];
 
@@ -200,6 +209,8 @@ const experience = [
     company: 'Freelance and consulting',
     description:
       'Designing and building end-to-end automation systems for growing teams across sales, operations, support, and reporting.',
+    tags: [] as string[],
+    ongoing: true,
   },
   {
     period: '2021—2023',
@@ -207,6 +218,8 @@ const experience = [
     company: 'Business operations',
     description:
       'Improved internal workflows by connecting business tools, removing manual data entry, and creating reliable reporting pipelines.',
+    tags: [] as string[],
+    ongoing: false,
   },
   {
     period: '2019—2021',
@@ -214,6 +227,8 @@ const experience = [
     company: 'Enterprise projects',
     description:
       'Built and maintained robotic process automations for repetitive, rules-based workflows and high-volume operational tasks.',
+    tags: [] as string[],
+    ongoing: false,
   },
 ];
 
@@ -266,7 +281,7 @@ const blankItem = (section: ListSection): Item =>
   Object.fromEntries(
     Object.entries(defaultContent[section][0]).map(([key, value]) => [
       key,
-      key === 'id' ? crypto.randomUUID() : key === 'accent' ? value : Array.isArray(value) ? [] : '',
+      key === 'id' ? crypto.randomUUID() : key === 'accent' ? value : Array.isArray(value) ? [] : typeof value === 'boolean' ? false : '',
     ]),
   );
 
@@ -295,9 +310,132 @@ function WorkflowVisual({ project }: { project: (typeof projects)[number] }) {
   );
 }
 
+function ProjectImages({ images, title, imageClass = 'h-[245px]' }: { images: string[]; title: string; imageClass?: string }) {
+  const [index, setIndex] = useState(0);
+  const [full, setFull] = useState(false);
+  const i = index % images.length; // images can shrink while editing
+  const step = (d: number) => setIndex((i + d + images.length) % images.length);
+  const navButton = 'flex h-9 w-9 items-center justify-center rounded-full bg-ink/60 text-paper backdrop-blur transition hover:bg-ink';
+
+  useEffect(() => {
+    if (!full) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation(); // close only full view, not the project details behind it
+        setFull(false);
+      }
+      if (e.key === 'ArrowRight') step(1);
+      if (e.key === 'ArrowLeft') step(-1);
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  });
+
+  const controls = images.length > 1 && (
+    <>
+      <button type="button" aria-label="Previous image" onClick={() => step(-1)} className={`${navButton} absolute left-3 top-1/2 -translate-y-1/2`}>
+        <ArrowRight className="h-4 w-4 rotate-180" />
+      </button>
+      <button type="button" aria-label="Next image" onClick={() => step(1)} className={`${navButton} absolute right-3 top-1/2 -translate-y-1/2`}>
+        <ArrowRight className="h-4 w-4" />
+      </button>
+      <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5">
+        {images.map((src, n) => (
+          <button key={src} type="button" aria-label={`Show image ${n + 1}`} onClick={() => setIndex(n)} className={`h-2 rounded-full transition-all ${n === i ? 'w-5 bg-paper' : 'w-2 bg-paper/45'}`} />
+        ))}
+      </div>
+    </>
+  );
+
+  return (
+    <div className="workflow-canvas">
+      <img src={images[i]} alt={`${title} screenshot ${i + 1}`} className={`${imageClass} w-full object-cover`} />
+      <button type="button" aria-label="View full size" onClick={() => setFull(true)} className={`${navButton} absolute right-3 top-3`}>
+        <ArrowUpRight className="h-4 w-4" />
+      </button>
+      {controls}
+      {/* portal: card's backdrop-filter/transform would trap a fixed overlay */}
+      {full && createPortal(
+        <div role="dialog" aria-modal="true" aria-label={`${title} images`} onClick={() => setFull(false)} className="fixed inset-0 z-50 flex items-center justify-center bg-ink/90 p-4 md:p-10">
+          <div className="relative flex h-full w-full items-center justify-center" onClick={(e) => e.stopPropagation()}>
+            <img src={images[i]} alt={`${title} screenshot ${i + 1}`} className="max-h-full max-w-full rounded-2xl object-contain" />
+            <button type="button" aria-label="Close full view" onClick={() => setFull(false)} className={`${navButton} absolute right-3 top-3`}>
+              <Close className="h-4 w-4" />
+            </button>
+            {controls}
+          </div>
+        </div>,
+        document.body,
+      )}
+    </div>
+  );
+}
+
+function ProjectDetails({ project, onClose }: { project: (typeof projects)[number]; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div role="dialog" aria-modal="true" aria-label={project.title} onClick={onClose} className="fixed inset-0 z-40 flex items-end justify-center bg-ink/70 p-0 backdrop-blur-sm md:items-center md:p-8">
+      <div onClick={(e) => e.stopPropagation()} className="relative max-h-[92vh] w-full max-w-[900px] overflow-y-auto rounded-t-[28px] bg-paper p-4 text-ink md:rounded-[28px] md:p-6">
+        {project.images.length ? (
+          <ProjectImages images={project.images} title={project.title} imageClass="h-[260px] md:h-[440px]" />
+        ) : (
+          <WorkflowVisual project={project} />
+        )}
+        <div className="px-2 pb-4 pt-7 md:px-4">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-ink/50">
+              {project.platform} · {project.category}
+            </p>
+            <span className="rounded-full bg-ink/5 px-3 py-1.5 text-xs font-medium">{project.result}</span>
+          </div>
+          <h3 className="text-3xl font-semibold tracking-[-.045em] md:text-5xl">{project.title}</h3>
+          <p className="mt-4 max-w-[680px] leading-relaxed text-ink/65">{project.description}</p>
+          {project.nodes.length > 0 && (
+            <div className="mt-8">
+              <p className="mb-3 font-mono text-xs uppercase tracking-[.16em] text-accent">Workflow</p>
+              <ol className="flex flex-wrap items-center gap-2">
+                {project.nodes.map((node, n) => (
+                  <li key={node} className="flex items-center gap-2">
+                    <span className="rounded-full border border-ink/15 px-3 py-1.5 text-sm font-medium capitalize">{node}</span>
+                    {n < project.nodes.length - 1 && <ArrowRight className="h-4 w-4 text-ink/35" />}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
+          <div className="mt-8">
+            <p className="mb-3 font-mono text-xs uppercase tracking-[.16em] text-accent">Tools</p>
+            <div className="flex flex-wrap gap-2">
+              {project.tools.map((tool) => (
+                <span key={tool} className="rounded-md border border-ink/10 px-2.5 py-1.5 font-mono text-xs text-ink/60">
+                  {tool}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+        <button type="button" aria-label="Close project" onClick={onClose} className="absolute left-7 top-7 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-paper text-ink shadow transition hover:bg-ink hover:text-paper md:left-9 md:top-9">
+          <Close className="h-5 w-5" />
+        </button>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export default function App() {
   const [activeFilter, setActiveFilter] = useState('All platforms');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [openProject, setOpenProject] = useState<(typeof projects)[number] | null>(null);
   const [content, setContent] = useState<Content>(defaultContent);
   const [session, setSession] = useState<Session | null>(null);
   const [loginOpen, setLoginOpen] = useState(false);
@@ -356,7 +494,7 @@ export default function App() {
       ? content[editing.section]
       : editing.index === -1
         ? blankItem(editing.section)
-        : content[editing.section][editing.index];
+        : { ...blankItem(editing.section), ...content[editing.section][editing.index] };
 
   const visibleProjects =
     activeFilter === 'All platforms'
@@ -565,11 +703,7 @@ export default function App() {
               <article key={project.id} className="glass-panel project-card group relative flex min-h-[560px] flex-col rounded-[28px] border border-paper/55 p-5 md:p-7">
                 {actions('projects', projects.indexOf(project))}
                 {project.images.length ? (
-                  <div className="workflow-canvas flex snap-x snap-mandatory overflow-x-auto">
-                    {project.images.map((src, index) => (
-                      <img key={src} src={src} alt={`${project.title} screenshot ${index + 1}`} className="h-[245px] w-full shrink-0 snap-center object-cover" />
-                    ))}
-                  </div>
+                  <ProjectImages images={project.images} title={project.title} />
                 ) : (
                   <WorkflowVisual project={project} />
                 )}
@@ -590,7 +724,7 @@ export default function App() {
                         </span>
                       ))}
                     </div>
-                    <button type="button" aria-label={`View ${project.title}`} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-ink/15 transition group-hover:rotate-45 group-hover:bg-ink group-hover:text-paper">
+                    <button type="button" aria-label={`View ${project.title}`} onClick={() => setOpenProject(project)} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-ink/15 transition group-hover:rotate-45 group-hover:bg-ink group-hover:text-paper">
                       <ArrowUpRight className="h-5 w-5" />
                     </button>
                   </div>
@@ -599,6 +733,7 @@ export default function App() {
             ))}
           </div>
           {addButton('projects')}
+          {openProject && <ProjectDetails project={openProject} onClose={() => setOpenProject(null)} />}
         </section>
 
         <section id="skills" className="mx-auto max-w-[1400px] px-5 py-20 md:px-8 md:py-28">
@@ -640,11 +775,23 @@ export default function App() {
               {experience.map((item, index) => (
                 <article key={index} className="relative grid gap-4 border-b border-ink/15 py-8 md:grid-cols-[150px_1fr] md:gap-8">
                   {actions('experience', index)}
-                  <p className="text-sm font-semibold text-ink/45">{item.period}</p>
+                  <div className="flex flex-wrap items-start gap-2 md:flex-col">
+                    <p className="text-sm font-semibold text-ink/45">{item.period}</p>
+                    {item.ongoing && <span className="w-fit rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[.12em] text-accent">Ongoing</span>}
+                  </div>
                   <div>
                     <h3 className="text-2xl font-semibold tracking-[-.035em]">{item.role}</h3>
                     <p className="mt-1 font-medium text-accent">{item.company}</p>
                     <p className="mt-4 max-w-[620px] leading-relaxed text-ink/55">{item.description}</p>
+                    {!!item.tags?.length && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {item.tags.map((tag) => (
+                          <span key={tag} className="rounded-full border border-ink/10 bg-paper/35 px-3 py-1.5 text-xs text-ink/60">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </article>
               ))}
@@ -697,9 +844,21 @@ export default function App() {
                       <p className="text-sm font-semibold text-accent">{certification.issuer}</p>
                       <h3 className="mt-2 text-2xl font-semibold tracking-[-.04em] md:text-3xl">{certification.title}</h3>
                     </div>
-                    <span className="shrink-0 text-sm text-ink/40">{certification.year}</span>
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      <span className="text-sm text-ink/40">{certification.year}</span>
+                      {certification.ongoing && <span className="w-fit rounded-full border border-accent/40 bg-accent/10 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[.12em] text-accent">WIP</span>}
+                    </div>
                   </div>
                   <p className="mt-3 max-w-[480px] leading-relaxed text-ink/50">{certification.detail}</p>
+                  {!!certification.tags?.length && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {certification.tags.map((tag) => (
+                        <span key={tag} className="rounded-full border border-ink/10 bg-paper/35 px-3 py-1.5 text-xs text-ink/60">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </article>
               ))}
             </div>
