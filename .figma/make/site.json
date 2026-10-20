@@ -1,0 +1,10 @@
+{
+  "description": "Showcase your automation projects with a professional portfolio website designed for developers and freelancers to attract clients and demonstrate expertise.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}
