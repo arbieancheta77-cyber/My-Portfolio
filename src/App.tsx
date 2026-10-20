@@ -674,7 +674,7 @@ export default function App() {
           </div>
           <div className="grid gap-5 md:grid-cols-3">
             {services.map((service, index) => (
-              <article key={index} className="glass-panel group relative overflow-hidden rounded-[24px] border border-paper/55 p-5">
+              <article key={index} className="glass-panel hover-card group relative overflow-hidden rounded-[24px] border border-paper/55 p-5">
                 {actions('services', index)}
                 {service.images?.length ? (
                   <ProjectImages images={service.images} title={service.title} imageClass="h-52" />
@@ -767,7 +767,7 @@ export default function App() {
 
           <div className="grid gap-5 md:grid-cols-2">
             {visibleProjects.map((project) => (
-              <article key={project.id} className="glass-panel project-card group relative flex min-h-[560px] flex-col rounded-[28px] border border-paper/55 p-5 md:p-7">
+              <article key={project.id} className="glass-panel hover-card group relative flex min-h-[560px] flex-col rounded-[28px] border border-paper/55 p-5 md:p-7">
                 {actions('projects', projects.indexOf(project))}
                 {project.images.length ? (
                   <ProjectImages images={project.images} title={project.title} />
@@ -824,7 +824,7 @@ export default function App() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {skillGroups.map((group, index) => (
-              <article key={index} className="glass-panel relative min-h-64 rounded-[22px] border border-paper/55 p-6">
+              <article key={index} className="glass-panel hover-card relative min-h-64 rounded-[22px] border border-paper/55 p-6">
                 {actions('skillGroups', index)}
                 <div className="flex items-start justify-between">
                   <WorkflowIcon className="h-8 w-8 text-accent" />
@@ -897,7 +897,7 @@ export default function App() {
               {certifications.map((certification, index) => (
                 <article
                   key={index}
-                  className="glass-panel cert-card group relative overflow-hidden rounded-[24px] border border-paper/55 p-6 md:p-8"
+                  className="glass-panel hover-card cert-card group relative overflow-hidden rounded-[24px] border border-paper/55 p-6 md:p-8"
                 >
                   {actions('certifications', index)}
                   <div className="certificate-preview workflow-canvas">
@@ -956,7 +956,7 @@ export default function App() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {gallery.map((photo, index) =>
                 !photo.image && !isAdmin ? null : (
-                  <figure key={index} className="glass-panel relative rounded-[22px] border border-paper/55 p-3">
+                  <figure key={index} className="glass-panel hover-card relative rounded-[22px] border border-paper/55 p-3">
                     {actions('gallery', index)}
                     {photo.image ? (
                       <img src={photo.image} alt={photo.caption} className="aspect-[4/3] w-full rounded-2xl object-cover" />
