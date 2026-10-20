@@ -6,7 +6,7 @@ export type Item = Record<string, unknown>;
 const hiddenKeys = ['id', 'accent'];
 const longKeys = ['description', 'detail', 'tagline', 'aboutText'];
 const fieldClass =
-  'w-full rounded-xl border border-[#101114]/15 bg-white/70 px-3 py-2.5 text-sm outline-none focus:border-[#ff6b35]';
+  'w-full rounded-xl border border-ink/15 bg-white/70 px-3 py-2.5 text-sm outline-none focus:border-accent';
 
 const toLabel = (key: string) => key.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase());
 
@@ -20,11 +20,11 @@ async function uploadImage(file: File) {
 
 function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#101114]/50 p-4 backdrop-blur-sm">
-      <div role="dialog" aria-modal="true" aria-label={title} className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[24px] bg-[#eef0f2] p-6 shadow-2xl">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-ink/50 p-4 backdrop-blur-sm">
+      <div role="dialog" aria-modal="true" aria-label={title} className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-[24px] bg-paper p-6 shadow-2xl">
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-2xl font-semibold tracking-[-.04em]">{title}</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="rounded-full px-3 py-1 text-xl hover:bg-[#101114]/10">
+          <button type="button" onClick={onClose} aria-label="Close" className="rounded-full px-3 py-1 text-xl hover:bg-ink/10">
             ×
           </button>
         </div>
@@ -62,7 +62,7 @@ export function LoginModal({ onClose }: { onClose: () => void }) {
           <input type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} className={`${fieldClass} mt-1.5`} />
         </label>
         {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-        <button type="submit" disabled={busy} className="w-full rounded-full bg-[#101114] px-6 py-3 text-sm font-bold text-[#eef0f2] disabled:opacity-50">
+        <button type="submit" disabled={busy} className="w-full rounded-full bg-ink px-6 py-3 text-sm font-bold text-paper disabled:opacity-50">
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
@@ -126,7 +126,7 @@ export function EditModal({ title, value, onSave, onClose }: { title: string; va
                           type="button"
                           aria-label="Remove image"
                           onClick={() => set(key, Array.isArray(v) ? urls.filter((u) => u !== url) : '')}
-                          className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-[#101114] text-xs text-[#eef0f2]"
+                          className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-ink text-xs text-paper"
                         >
                           ×
                         </button>
@@ -145,10 +145,18 @@ export function EditModal({ title, value, onSave, onClose }: { title: string; va
                 </label>
               );
             }
+            if (typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v)) {
+              return (
+                <label key={key} className="flex items-center justify-between text-sm font-semibold">
+                  {label}
+                  <input type="color" value={v} onChange={(e) => set(key, e.target.value)} className="h-10 w-16 cursor-pointer rounded-lg" />
+                </label>
+              );
+            }
             if (Array.isArray(v)) {
               return (
                 <label key={key} className="block text-sm font-semibold">
-                  {label} <span className="font-normal text-[#101114]/45">(one per line)</span>
+                  {label} <span className="font-normal text-ink/45">(one per line)</span>
                   <textarea rows={4} value={v.join('\n')} onChange={(e) => set(key, e.target.value.split('\n'))} className={`${fieldClass} mt-1.5`} />
                 </label>
               );
@@ -166,10 +174,10 @@ export function EditModal({ title, value, onSave, onClose }: { title: string; va
           })}
         {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
         <div className="flex justify-end gap-2 pt-2">
-          <button type="button" onClick={onClose} className="rounded-full border border-[#101114]/15 px-5 py-3 text-sm font-bold">
+          <button type="button" onClick={onClose} className="rounded-full border border-ink/15 px-5 py-3 text-sm font-bold">
             Cancel
           </button>
-          <button type="submit" disabled={busy} className="rounded-full bg-[#ff6b35] px-6 py-3 text-sm font-bold disabled:opacity-50">
+          <button type="submit" disabled={busy} className="rounded-full bg-accent px-6 py-3 text-sm font-bold disabled:opacity-50">
             {busy ? 'Saving…' : 'Post'}
           </button>
         </div>
@@ -178,7 +186,7 @@ export function EditModal({ title, value, onSave, onClose }: { title: string; va
   );
 }
 
-const pill = 'rounded-full bg-[#101114] px-3 py-1.5 text-xs font-bold text-[#eef0f2] shadow-lg transition hover:bg-[#ff6b35] hover:text-[#101114]';
+const pill = 'rounded-full bg-ink px-3 py-1.5 text-xs font-bold text-paper shadow-lg transition hover:bg-accent hover:text-ink';
 
 export function ItemActions({ onEdit, onDelete }: { onEdit: () => void; onDelete?: () => void }) {
   return (
@@ -195,7 +203,7 @@ export function ItemActions({ onEdit, onDelete }: { onEdit: () => void; onDelete
 
 export function AddButton({ onClick }: { onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="mx-auto mt-6 flex rounded-full border-2 border-dashed border-[#101114]/25 px-6 py-3 text-sm font-bold hover:border-[#ff6b35]">
+    <button type="button" onClick={onClick} className="mx-auto mt-6 flex rounded-full border-2 border-dashed border-ink/25 px-6 py-3 text-sm font-bold hover:border-accent">
       + Add new
     </button>
   );

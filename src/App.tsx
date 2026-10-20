@@ -250,11 +250,16 @@ const contactLinks = [
   },
 ];
 
+const gallery = [{ image: '', caption: '' }];
+
+const theme = { accentColor: '#ff6b35', darkColor: '#101114', lightColor: '#eef0f2' };
+
 // Built-in content; replaced by the Supabase row once you post your first edit.
-const defaultContent = { profile, services, projects, certifications, skillGroups, experience, contactLinks };
+const defaultContent = { profile, theme, services, projects, certifications, skillGroups, experience, contactLinks, gallery };
 type Content = typeof defaultContent;
-type ListSection = Exclude<keyof Content, 'profile'>;
-type Editing = { section: 'profile' } | { section: ListSection; index: number };
+type Singleton = 'profile' | 'theme';
+type ListSection = Exclude<keyof Content, Singleton>;
+type Editing = { section: Singleton } | { section: ListSection; index: number };
 
 // A new post starts as an empty copy of the section's first default item.
 const blankItem = (section: ListSection): Item =>
@@ -274,13 +279,13 @@ function WorkflowVisual({ project }: { project: (typeof projects)[number] }) {
           <div key={node} className="relative z-10 flex items-center">
             {index < project.nodes.length - 1 && <span className="node-line" />}
             <span
-              className="flex h-11 w-11 items-center justify-center rounded-xl border border-[#eef0f2]/15 bg-[#101114] shadow-xl"
-              style={index === 0 ? { borderColor: project.accent, color: project.accent } : undefined}
+              className="flex h-11 w-11 items-center justify-center rounded-xl border border-paper/15 bg-ink shadow-xl"
+              style={index === 0 ? { borderColor: 'var(--color-accent)', color: 'var(--color-accent)' } : undefined}
             >
               {index === project.nodes.length - 1 ? (
-                <Check className="h-4 w-4" style={{ color: project.accent }} />
+                <Check className="h-4 w-4 text-accent" />
               ) : (
-                <span className="h-2 w-2 rounded-full bg-[#eef0f2]/55" />
+                <span className="h-2 w-2 rounded-full bg-paper/55" />
               )}
             </span>
           </div>
@@ -298,7 +303,7 @@ export default function App() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [editing, setEditing] = useState<Editing | null>(null);
   const isAdmin = !!session;
-  const { profile, services, projects, certifications, skillGroups, experience, contactLinks } = content;
+  const { profile, theme, services, projects, certifications, skillGroups, experience, contactLinks, gallery } = content;
   const filters = ['All platforms', ...new Set(projects.map((project) => project.platform))];
 
   useEffect(() => {
@@ -314,6 +319,13 @@ export default function App() {
     return () => data.subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    const root = document.documentElement.style;
+    root.setProperty('--color-accent', theme.accentColor);
+    root.setProperty('--color-ink', theme.darkColor);
+    root.setProperty('--color-paper', theme.lightColor);
+  }, [theme]);
+
   const save = async (next: Content) => {
     const { error } = await supabase!.from('site_content').upsert({ id: 'main', data: next });
     if (error) throw error;
@@ -323,7 +335,7 @@ export default function App() {
 
   const saveItem = (item: Item) => {
     if (!editing) return Promise.resolve();
-    if (editing.section === 'profile') return save({ ...content, profile: item as Content['profile'] });
+    if (!('index' in editing)) return save({ ...content, [editing.section]: item });
     const list: Item[] = [...content[editing.section]];
     if (editing.index === -1) list.push(item);
     else list[editing.index] = item;
@@ -340,8 +352,8 @@ export default function App() {
 
   const editingValue: Item | null = !editing
     ? null
-    : editing.section === 'profile'
-      ? profile
+    : !('index' in editing)
+      ? content[editing.section]
       : editing.index === -1
         ? blankItem(editing.section)
         : content[editing.section][editing.index];
@@ -354,11 +366,11 @@ export default function App() {
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <div className="portfolio-shell min-h-screen overflow-hidden text-[#101114]">
-      <header className="glass-nav fixed inset-x-0 top-0 z-50 border-b border-[#eef0f2]/50">
+    <div className="portfolio-shell min-h-screen overflow-hidden text-ink">
+      <header className="glass-nav fixed inset-x-0 top-0 z-50 border-b border-paper/50">
         <div className="mx-auto flex h-[72px] max-w-[1400px] items-center justify-between px-5 md:px-8">
           <a href="#top" className="flex items-center gap-3" onClick={closeMenu}>
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#101114] text-[#ff6b35]">
+            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ink text-accent">
               <WorkflowIcon className="h-[18px] w-[18px]" />
             </span>
             <span className="text-[17px] font-bold uppercase tracking-[-.04em]">
@@ -375,7 +387,7 @@ export default function App() {
 
           <a
             href="#contact"
-            className="hidden items-center gap-2 rounded-full bg-[#101114] px-5 py-3 text-sm font-semibold text-[#eef0f2] transition hover:bg-[#101114] md:flex"
+            className="hidden items-center gap-2 rounded-full bg-ink px-5 py-3 text-sm font-semibold text-paper transition hover:bg-ink md:flex"
           >
             Start a project <ArrowUpRight className="h-4 w-4" />
           </a>
@@ -383,20 +395,20 @@ export default function App() {
             type="button"
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             onClick={() => setMenuOpen((open) => !open)}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-[#101114]/15 md:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-ink/15 md:hidden"
           >
             {menuOpen ? <Close className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
         {menuOpen && (
-          <div className="border-t border-[#101114]/10 bg-[#eef0f2] p-5 md:hidden">
+          <div className="border-t border-ink/10 bg-paper p-5 md:hidden">
             <nav className="flex flex-col text-2xl font-semibold">
               {['work', 'skills', 'experience', 'certifications'].map((item) => (
-                <a key={item} href={`#${item}`} onClick={closeMenu} className="border-b border-[#101114]/10 py-4 capitalize">
+                <a key={item} href={`#${item}`} onClick={closeMenu} className="border-b border-ink/10 py-4 capitalize">
                   {item}
                 </a>
               ))}
-              <a href="#contact" onClick={closeMenu} className="mt-5 rounded-full bg-[#101114] px-5 py-4 text-center text-base text-[#eef0f2]">
+              <a href="#contact" onClick={closeMenu} className="mt-5 rounded-full bg-ink px-5 py-4 text-center text-base text-paper">
                 Start a project
               </a>
             </nav>
@@ -407,46 +419,46 @@ export default function App() {
       <main id="top">
         <section className="relative mx-auto max-w-[1400px] px-5 pb-20 pt-28 md:px-8 md:pb-24 md:pt-36">
           <div className="grid gap-6 lg:grid-cols-[1.08fr_.92fr]">
-            <div className="glass-panel relative flex min-h-[500px] flex-col justify-center rounded-[28px] border border-[#eef0f2]/55 p-7 md:p-12 lg:p-16">
+            <div className="glass-panel relative flex min-h-[500px] flex-col justify-center rounded-[28px] border border-paper/55 p-7 md:p-12 lg:p-16">
               {editProfile}
-              <p className="mb-5 font-mono text-xs uppercase tracking-[.16em] text-[#ff6b35]">Hi there — I’m</p>
+              <p className="mb-5 font-mono text-xs uppercase tracking-[.16em] text-accent">Hi there — I’m</p>
               <h1 className="text-[clamp(4rem,8vw,7.5rem)] font-semibold leading-[.82] tracking-[-.075em]">
                 {profile.firstName}
                 <span className="block">{profile.lastName}.</span>
               </h1>
-              <p className="mt-7 w-fit rounded-full bg-[#101114] px-4 py-2 text-sm font-semibold text-[#eef0f2]">
+              <p className="mt-7 w-fit rounded-full bg-ink px-4 py-2 text-sm font-semibold text-paper">
                 {profile.role}
               </p>
-              <p className="mt-7 max-w-[620px] text-lg leading-relaxed text-[#101114]/58 md:text-xl">
+              <p className="mt-7 max-w-[620px] text-lg leading-relaxed text-ink/58 md:text-xl">
                 {profile.tagline}
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <a href="#contact" className="flex items-center gap-2 rounded-full bg-[#ff6b35] px-6 py-4 text-sm font-bold transition hover:bg-[#ff6b35]">
+                <a href="#contact" className="flex items-center gap-2 rounded-full bg-accent px-6 py-4 text-sm font-bold transition hover:bg-accent">
                   Start a project <ArrowUpRight className="h-4 w-4" />
                 </a>
-                <a href="#work" className="group flex items-center gap-3 rounded-full border border-[#101114]/15 px-6 py-4 text-sm font-bold transition hover:border-[#101114]/40">
+                <a href="#work" className="group flex items-center gap-3 rounded-full border border-ink/15 px-6 py-4 text-sm font-bold transition hover:border-ink/40">
                   View my work <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                 </a>
               </div>
             </div>
 
-            <div className="glass-dark relative flex min-h-[500px] items-center justify-center overflow-hidden rounded-[28px] p-8 text-[#eef0f2]">
+            <div className="glass-dark relative flex min-h-[500px] items-center justify-center overflow-hidden rounded-[28px] p-8 text-paper">
               <div className="profile-grid absolute inset-0 opacity-40" />
-              <div className="hero-orbit pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#eef0f2]/10">
-                <div className="absolute bottom-[82px] right-[62px] h-3 w-3 rounded-full bg-[#ff6b35]" />
+              <div className="hero-orbit pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-paper/10">
+                <div className="absolute bottom-[82px] right-[62px] h-3 w-3 rounded-full bg-accent" />
               </div>
               <div className="profile-photo-frame relative z-10 flex h-64 w-64 items-center justify-center rounded-full md:h-80 md:w-80">
                 {profile.photo ? (
                   <img src={profile.photo} alt={`${profile.firstName} ${profile.lastName}`} className="h-full w-full object-cover" />
                 ) : (
-                  <span className="text-7xl font-semibold tracking-[-.09em] text-[#eef0f2]/85">
+                  <span className="text-7xl font-semibold tracking-[-.09em] text-paper/85">
                     {profile.firstName[0]}
                     {profile.lastName[0]}
                   </span>
                 )}
               </div>
               {profile.availability && (
-                <span className="absolute right-6 top-6 rounded-full border border-[#ff6b35]/30 bg-[#ff6b35]/10 px-3 py-2 font-mono text-[10px] uppercase tracking-[.12em] text-[#ff6b35]">
+                <span className="absolute right-6 top-6 rounded-full border border-accent/30 bg-accent/10 px-3 py-2 font-mono text-[10px] uppercase tracking-[.12em] text-accent">
                   {profile.availability}
                 </span>
               )}
@@ -456,21 +468,21 @@ export default function App() {
 
         <section className="mx-auto max-w-[1400px] px-5 py-20 md:px-8 md:py-24">
           <div className="mb-12 text-center">
-            <p className="font-mono text-xs uppercase tracking-[.16em] text-[#ff6b35]">Services</p>
+            <p className="font-mono text-xs uppercase tracking-[.16em] text-accent">Services</p>
             <h2 className="mt-3 text-5xl font-semibold tracking-[-.055em] md:text-6xl">What I do</h2>
           </div>
           <div className="grid gap-5 md:grid-cols-3">
             {services.map((service, index) => (
-              <article key={index} className="glass-panel group relative overflow-hidden rounded-[24px] border border-[#eef0f2]/55 p-5">
+              <article key={index} className="glass-panel group relative overflow-hidden rounded-[24px] border border-paper/55 p-5">
                 {actions('services', index)}
                 <div className="workflow-canvas flex min-h-52 items-end p-6">
                   <div className="canvas-grid" />
-                  <span className="relative font-mono text-5xl text-[#ff6b35]">{service.number}</span>
-                  <WorkflowIcon className="absolute right-6 top-6 h-10 w-10 text-[#eef0f2]/25 transition group-hover:text-[#ff6b35]" />
+                  <span className="relative font-mono text-5xl text-accent">{service.number}</span>
+                  <WorkflowIcon className="absolute right-6 top-6 h-10 w-10 text-paper/25 transition group-hover:text-accent" />
                 </div>
                 <h3 className="mt-6 text-2xl font-semibold tracking-[-.04em]">{service.title}</h3>
-                <p className="mt-3 leading-relaxed text-[#101114]/55">{service.description}</p>
-                <p className="mt-6 font-mono text-[10px] uppercase tracking-[.1em] text-[#101114]/40">{service.tools}</p>
+                <p className="mt-3 leading-relaxed text-ink/55">{service.description}</p>
+                <p className="mt-6 font-mono text-[10px] uppercase tracking-[.1em] text-ink/40">{service.tools}</p>
               </article>
             ))}
           </div>
@@ -479,39 +491,39 @@ export default function App() {
 
         <section id="about" className="mx-auto max-w-[1400px] px-5 py-20 md:px-8 md:py-28">
           <div className="grid items-center gap-8 lg:grid-cols-[.92fr_1.08fr] lg:gap-16">
-            <div className="glass-dark relative min-h-[500px] overflow-hidden rounded-[28px] p-8 text-[#eef0f2]">
+            <div className="glass-dark relative min-h-[500px] overflow-hidden rounded-[28px] p-8 text-paper">
               <div className="profile-grid absolute inset-0 opacity-50" />
               <div className="relative flex h-full min-h-[436px] flex-col justify-between">
-                <span className="font-mono text-xs uppercase tracking-[.14em] text-[#ff6b35]">Profile / 2025</span>
+                <span className="font-mono text-xs uppercase tracking-[.14em] text-accent">Profile / 2025</span>
                 <div>
                   <strong className="block text-7xl font-semibold tracking-[-.07em]">{profile.systemsShipped}</strong>
-                  <p className="mt-2 text-[#eef0f2]/45">Automation systems shipped</p>
+                  <p className="mt-2 text-paper/45">Automation systems shipped</p>
                 </div>
-                <div className="grid grid-cols-2 gap-5 border-t border-[#eef0f2]/15 pt-6">
+                <div className="grid grid-cols-2 gap-5 border-t border-paper/15 pt-6">
                   <div>
                     <strong className="text-3xl tracking-[-.05em]">{profile.hoursReturned}</strong>
-                    <span className="mt-1 block text-xs text-[#eef0f2]/40">Hours returned</span>
+                    <span className="mt-1 block text-xs text-paper/40">Hours returned</span>
                   </div>
                   <div>
                     <strong className="text-3xl tracking-[-.05em]">{profile.corePlatforms}</strong>
-                    <span className="mt-1 block text-xs text-[#eef0f2]/40">Core platforms</span>
+                    <span className="mt-1 block text-xs text-paper/40">Core platforms</span>
                   </div>
                 </div>
               </div>
             </div>
             <div className="relative lg:py-10">
               {editProfile}
-              <p className="font-mono text-xs uppercase tracking-[.16em] text-[#ff6b35]">About me</p>
+              <p className="font-mono text-xs uppercase tracking-[.16em] text-accent">About me</p>
               <h2 className="mt-4 text-5xl font-semibold leading-[.95] tracking-[-.06em] md:text-7xl">
                 {profile.aboutTitle}
               </h2>
-              <p className="mt-7 max-w-[650px] text-lg leading-relaxed text-[#101114]/58">
+              <p className="mt-7 max-w-[650px] text-lg leading-relaxed text-ink/58">
                 {profile.aboutText}
               </p>
               <div className="mt-8 space-y-4">
                 {profile.highlights.map((item) => (
-                  <div key={item} className="flex items-center gap-4 border-b border-[#101114]/10 pb-4">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#ff6b35]">
+                  <div key={item} className="flex items-center gap-4 border-b border-ink/10 pb-4">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent">
                       <Check className="h-4 w-4" />
                     </span>
                     <p className="font-medium">{item}</p>
@@ -525,7 +537,7 @@ export default function App() {
         <section id="work" className="mx-auto max-w-[1400px] px-5 py-20 md:px-8 md:py-28">
           <div className="mb-14 flex flex-col justify-between gap-8 lg:flex-row lg:items-end">
             <div>
-              <p className="mb-3 font-mono text-xs uppercase tracking-[.16em] text-[#ff6b35]">Portfolio</p>
+              <p className="mb-3 font-mono text-xs uppercase tracking-[.16em] text-accent">Portfolio</p>
               <h2 className="max-w-[750px] text-5xl font-semibold leading-[.98] tracking-[-.055em] md:text-7xl">
                 Selected work
               </h2>
@@ -538,8 +550,8 @@ export default function App() {
                   onClick={() => setActiveFilter(filter)}
                   className={`shrink-0 rounded-full border px-4 py-2.5 text-xs font-semibold transition ${
                     activeFilter === filter
-                      ? 'border-[#101114] bg-[#101114] text-[#eef0f2]'
-                      : 'border-[#101114]/15 hover:border-[#101114]/40'
+                      ? 'border-ink bg-ink text-paper'
+                      : 'border-ink/15 hover:border-ink/40'
                   }`}
                 >
                   {filter}
@@ -550,7 +562,7 @@ export default function App() {
 
           <div className="grid gap-5 md:grid-cols-2">
             {visibleProjects.map((project) => (
-              <article key={project.id} className="glass-panel project-card group relative flex min-h-[560px] flex-col rounded-[28px] border border-[#eef0f2]/55 p-5 md:p-7">
+              <article key={project.id} className="glass-panel project-card group relative flex min-h-[560px] flex-col rounded-[28px] border border-paper/55 p-5 md:p-7">
                 {actions('projects', projects.indexOf(project))}
                 {project.images.length ? (
                   <div className="workflow-canvas flex snap-x snap-mandatory overflow-x-auto">
@@ -563,22 +575,22 @@ export default function App() {
                 )}
                 <div className="flex flex-1 flex-col pt-7">
                   <div className="mb-4 flex items-center justify-between">
-                    <p className="text-sm font-semibold text-[#101114]/50">{project.platform}</p>
-                    <span className="rounded-full bg-[#eef0f2]/75 px-3 py-1.5 text-xs font-medium">
+                    <p className="text-sm font-semibold text-ink/50">{project.platform}</p>
+                    <span className="rounded-full bg-paper/75 px-3 py-1.5 text-xs font-medium">
                       {project.result}
                     </span>
                   </div>
                   <h3 className="text-3xl font-semibold tracking-[-.045em] md:text-4xl">{project.title}</h3>
-                  <p className="mt-4 max-w-[520px] leading-relaxed text-[#101114]/58">{project.description}</p>
+                  <p className="mt-4 max-w-[520px] leading-relaxed text-ink/58">{project.description}</p>
                   <div className="mt-auto flex items-end justify-between pt-7">
                     <div className="flex flex-wrap gap-2">
                       {project.tools.map((tool) => (
-                        <span key={tool} className="rounded-md border border-[#101114]/10 px-2.5 py-1.5 font-mono text-[10px] text-[#101114]/55">
+                        <span key={tool} className="rounded-md border border-ink/10 px-2.5 py-1.5 font-mono text-[10px] text-ink/55">
                           {tool}
                         </span>
                       ))}
                     </div>
-                    <button type="button" aria-label={`View ${project.title}`} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[#101114]/15 transition group-hover:rotate-45 group-hover:bg-[#101114] group-hover:text-[#eef0f2]">
+                    <button type="button" aria-label={`View ${project.title}`} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-ink/15 transition group-hover:rotate-45 group-hover:bg-ink group-hover:text-paper">
                       <ArrowUpRight className="h-5 w-5" />
                     </button>
                   </div>
@@ -591,21 +603,21 @@ export default function App() {
 
         <section id="skills" className="mx-auto max-w-[1400px] px-5 py-20 md:px-8 md:py-28">
           <div className="mb-12 text-center">
-            <p className="font-mono text-xs uppercase tracking-[.16em] text-[#ff6b35]">Toolkit</p>
+            <p className="font-mono text-xs uppercase tracking-[.16em] text-accent">Toolkit</p>
             <h2 className="mt-3 text-5xl font-semibold tracking-[-.055em] md:text-6xl">Skills</h2>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {skillGroups.map((group, index) => (
-              <article key={index} className="glass-panel relative min-h-64 rounded-[22px] border border-[#eef0f2]/55 p-6">
+              <article key={index} className="glass-panel relative min-h-64 rounded-[22px] border border-paper/55 p-6">
                 {actions('skillGroups', index)}
                 <div className="flex items-start justify-between">
-                  <WorkflowIcon className="h-8 w-8 text-[#ff6b35]" />
-                  <span className="font-mono text-xs text-[#101114]/30">0{index + 1}</span>
+                  <WorkflowIcon className="h-8 w-8 text-accent" />
+                  <span className="font-mono text-xs text-ink/30">0{index + 1}</span>
                 </div>
                 <h3 className="mt-10 text-xl font-semibold tracking-[-.03em]">{group.title}</h3>
                 <div className="mt-5 flex flex-wrap gap-2">
                   {group.skills.map((skill) => (
-                    <span key={skill} className="rounded-full border border-[#101114]/10 bg-[#eef0f2]/35 px-3 py-2 text-xs text-[#101114]/60">
+                    <span key={skill} className="rounded-full border border-ink/10 bg-paper/35 px-3 py-2 text-xs text-ink/60">
                       {skill}
                     </span>
                   ))}
@@ -616,23 +628,23 @@ export default function App() {
           {addButton('skillGroups')}
         </section>
 
-        <section id="experience" className="border-y border-[#eef0f2]/50 bg-[#eef0f2]/15 backdrop-blur-sm">
+        <section id="experience" className="border-y border-paper/50 bg-paper/15 backdrop-blur-sm">
           <div className="mx-auto grid max-w-[1400px] gap-12 px-5 py-24 md:px-8 md:py-32 lg:grid-cols-[.7fr_1.3fr]">
             <div>
               <h2 className="text-5xl font-semibold leading-[.98] tracking-[-.055em] md:text-7xl">Experience</h2>
-              <p className="mt-6 max-w-[390px] text-lg leading-relaxed text-[#101114]/55">
+              <p className="mt-6 max-w-[390px] text-lg leading-relaxed text-ink/55">
                 Practical experience building automations for real business workflows.
               </p>
             </div>
-            <div className="border-t border-[#101114]/15">
+            <div className="border-t border-ink/15">
               {experience.map((item, index) => (
-                <article key={index} className="relative grid gap-4 border-b border-[#101114]/15 py-8 md:grid-cols-[150px_1fr] md:gap-8">
+                <article key={index} className="relative grid gap-4 border-b border-ink/15 py-8 md:grid-cols-[150px_1fr] md:gap-8">
                   {actions('experience', index)}
-                  <p className="text-sm font-semibold text-[#101114]/45">{item.period}</p>
+                  <p className="text-sm font-semibold text-ink/45">{item.period}</p>
                   <div>
                     <h3 className="text-2xl font-semibold tracking-[-.035em]">{item.role}</h3>
-                    <p className="mt-1 font-medium text-[#ff6b35]">{item.company}</p>
-                    <p className="mt-4 max-w-[620px] leading-relaxed text-[#101114]/55">{item.description}</p>
+                    <p className="mt-1 font-medium text-accent">{item.company}</p>
+                    <p className="mt-4 max-w-[620px] leading-relaxed text-ink/55">{item.description}</p>
                   </div>
                 </article>
               ))}
@@ -641,7 +653,7 @@ export default function App() {
           </div>
         </section>
 
-        <section id="certifications" className="border-y border-[#eef0f2]/50 bg-[#eef0f2]/15 backdrop-blur-sm">
+        <section id="certifications" className="border-y border-paper/50 bg-paper/15 backdrop-blur-sm">
           <div className="mx-auto max-w-[1400px] px-5 py-24 md:px-8 md:py-32">
             <div className="mb-14 flex flex-col justify-between gap-6 md:flex-row md:items-end">
               <div>
@@ -649,7 +661,7 @@ export default function App() {
                   Certifications
                 </h2>
               </div>
-              <p className="max-w-[390px] text-lg leading-relaxed text-[#101114]/55">
+              <p className="max-w-[390px] text-lg leading-relaxed text-ink/55">
                 Platform-certified across the tools I use to design, build, and maintain production automations.
               </p>
             </div>
@@ -657,7 +669,7 @@ export default function App() {
               {certifications.map((certification, index) => (
                 <article
                   key={index}
-                  className="glass-panel cert-card group relative overflow-hidden rounded-[24px] border border-[#eef0f2]/55 p-6 md:p-8"
+                  className="glass-panel cert-card group relative overflow-hidden rounded-[24px] border border-paper/55 p-6 md:p-8"
                 >
                   {actions('certifications', index)}
                   <div className="certificate-preview workflow-canvas">
@@ -672,22 +684,22 @@ export default function App() {
                       <div className="relative flex h-full flex-col items-center justify-center gap-4 text-center">
                         <span
                           className="flex h-14 w-14 items-center justify-center rounded-2xl border"
-                          style={{ borderColor: certification.accent, color: certification.accent }}
+                          style={{ borderColor: 'var(--color-accent)', color: 'var(--color-accent)' }}
                         >
                           <Check className="h-6 w-6" />
                         </span>
-                        <span className="text-sm font-medium text-[#eef0f2]/55">Certificate image</span>
+                        <span className="text-sm font-medium text-paper/55">Certificate image</span>
                       </div>
                     )}
                   </div>
                   <div className="mt-7 flex items-start justify-between gap-5">
                     <div>
-                      <p className="text-sm font-semibold text-[#ff6b35]">{certification.issuer}</p>
+                      <p className="text-sm font-semibold text-accent">{certification.issuer}</p>
                       <h3 className="mt-2 text-2xl font-semibold tracking-[-.04em] md:text-3xl">{certification.title}</h3>
                     </div>
-                    <span className="shrink-0 text-sm text-[#101114]/40">{certification.year}</span>
+                    <span className="shrink-0 text-sm text-ink/40">{certification.year}</span>
                   </div>
-                  <p className="mt-3 max-w-[480px] leading-relaxed text-[#101114]/50">{certification.detail}</p>
+                  <p className="mt-3 max-w-[480px] leading-relaxed text-ink/50">{certification.detail}</p>
                 </article>
               ))}
             </div>
@@ -695,23 +707,48 @@ export default function App() {
           </div>
         </section>
 
+        {(isAdmin || gallery.some((photo) => photo.image)) && (
+          <section id="gallery" className="mx-auto max-w-[1400px] px-5 py-20 md:px-8 md:py-28">
+            <div className="mb-12 text-center">
+              <p className="font-mono text-xs uppercase tracking-[.16em] text-accent">Gallery</p>
+              <h2 className="mt-3 text-5xl font-semibold tracking-[-.055em] md:text-6xl">Photos</h2>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {gallery.map((photo, index) =>
+                !photo.image && !isAdmin ? null : (
+                  <figure key={index} className="glass-panel relative rounded-[22px] border border-paper/55 p-3">
+                    {actions('gallery', index)}
+                    {photo.image ? (
+                      <img src={photo.image} alt={photo.caption} className="aspect-[4/3] w-full rounded-2xl object-cover" />
+                    ) : (
+                      <div className="flex aspect-[4/3] items-center justify-center rounded-2xl bg-ink text-sm text-paper/55">Add a photo</div>
+                    )}
+                    {photo.caption && <figcaption className="px-2 pb-1 pt-3 text-sm text-ink/60">{photo.caption}</figcaption>}
+                  </figure>
+                ),
+              )}
+            </div>
+            {addButton('gallery')}
+          </section>
+        )}
+
         <section id="contact" className="px-3 pb-3 pt-20 md:pt-28">
-          <div className="relative overflow-hidden rounded-[30px] bg-[#ff6b35] px-5 py-16 text-[#101114] md:px-12 md:py-20">
-            <div className="absolute -right-28 -top-52 h-[520px] w-[520px] rounded-full border border-[#101114]/10" />
-            <div className="absolute -right-8 -top-32 h-[320px] w-[320px] rounded-full border border-[#101114]/10" />
+          <div className="relative overflow-hidden rounded-[30px] bg-accent px-5 py-16 text-ink md:px-12 md:py-20">
+            <div className="absolute -right-28 -top-52 h-[520px] w-[520px] rounded-full border border-ink/10" />
+            <div className="absolute -right-8 -top-32 h-[320px] w-[320px] rounded-full border border-ink/10" />
             <div className="relative mx-auto max-w-[1300px] text-center">
               <p className="font-mono text-xs uppercase tracking-[.16em]">Have a project in mind?</p>
               <h2 className="mx-auto mt-4 max-w-[900px] text-[clamp(3.3rem,6vw,6rem)] font-semibold leading-[.9] tracking-[-.07em]">
                 Let’s build something that works better.
               </h2>
-              <p className="mx-auto mt-7 max-w-[600px] text-lg leading-relaxed text-[#101114]/65">
+              <p className="mx-auto mt-7 max-w-[600px] text-lg leading-relaxed text-ink/65">
                 Tell me what is slowing your team down. I’ll help turn it into a clear, dependable automation system.
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-3">
-                <a href="mailto:arbie.ancheta@gmail.com" className="flex items-center gap-2 rounded-full bg-[#101114] px-6 py-4 text-sm font-bold text-[#eef0f2]">
+                <a href="mailto:arbie.ancheta@gmail.com" className="flex items-center gap-2 rounded-full bg-ink px-6 py-4 text-sm font-bold text-paper">
                   Start a project <ArrowUpRight className="h-4 w-4" />
                 </a>
-                <a href="#work" className="flex items-center gap-2 rounded-full border border-[#101114]/20 bg-[#eef0f2]/35 px-6 py-4 text-sm font-bold">
+                <a href="#work" className="flex items-center gap-2 rounded-full border border-ink/20 bg-paper/35 px-6 py-4 text-sm font-bold">
                   View my work <ArrowRight className="h-4 w-4" />
                 </a>
               </div>
@@ -723,13 +760,13 @@ export default function App() {
                       href={contact.href}
                       target={contact.href.startsWith('http') ? '_blank' : undefined}
                       rel={contact.href.startsWith('http') ? 'noreferrer' : undefined}
-                      className="group flex min-h-28 flex-col justify-between rounded-[20px] bg-[#101114] p-5 text-[#eef0f2] transition hover:-translate-y-1"
+                      className="group flex min-h-28 flex-col justify-between rounded-[20px] bg-ink p-5 text-paper transition hover:-translate-y-1"
                     >
                       <div className="flex items-start justify-between">
                         <span className="font-semibold">{contact.label}</span>
-                        <ArrowUpRight className="h-5 w-5 text-[#ff6b35] transition group-hover:rotate-45" />
+                        <ArrowUpRight className="h-5 w-5 text-accent transition group-hover:rotate-45" />
                       </div>
-                      <span className="mt-6 break-all text-sm text-[#eef0f2]/50">{contact.value}</span>
+                      <span className="mt-6 break-all text-sm text-paper/50">{contact.value}</span>
                     </a>
                   </div>
                 ))}
@@ -740,30 +777,33 @@ export default function App() {
         </section>
       </main>
 
-      <footer className="mx-auto flex max-w-[1400px] flex-col gap-5 px-5 py-9 text-xs text-[#101114]/45 md:flex-row md:items-center md:justify-between md:px-8">
+      <footer className="mx-auto flex max-w-[1400px] flex-col gap-5 px-5 py-9 text-xs text-ink/45 md:flex-row md:items-center md:justify-between md:px-8">
         <p>© 2025 Arbie Ancheta. Built with intention.</p>
         <div className="flex gap-6">
-          <a href="https://www.linkedin.com" target="_blank" rel="noreferrer" className="hover:text-[#101114]">LinkedIn</a>
-          <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-[#101114]">GitHub</a>
-          <a href="mailto:arbie.ancheta@gmail.com" className="hover:text-[#101114]">Email</a>
+          <a href="https://www.linkedin.com" target="_blank" rel="noreferrer" className="hover:text-ink">LinkedIn</a>
+          <a href="https://github.com" target="_blank" rel="noreferrer" className="hover:text-ink">GitHub</a>
+          <a href="mailto:arbie.ancheta@gmail.com" className="hover:text-ink">Email</a>
           {isAdmin ? (
-            <button type="button" onClick={() => supabase?.auth.signOut()} className="hover:text-[#101114]">Log out</button>
+            <button type="button" onClick={() => supabase?.auth.signOut()} className="hover:text-ink">Log out</button>
           ) : (
-            <button type="button" onClick={() => setLoginOpen(true)} className="hover:text-[#101114]">Admin</button>
+            <button type="button" onClick={() => setLoginOpen(true)} className="hover:text-ink">Admin</button>
           )}
         </div>
       </footer>
 
       {isAdmin && (
-        <p className="fixed bottom-4 left-4 z-50 rounded-full bg-[#101114] px-4 py-2 text-xs font-bold text-[#ff6b35] shadow-lg">
-          Editing mode
-        </p>
+        <div className="fixed bottom-4 left-4 z-50 flex gap-2">
+          <p className="rounded-full bg-ink px-4 py-2 text-xs font-bold text-accent shadow-lg">Editing mode</p>
+          <button type="button" onClick={() => setEditing({ section: 'theme' })} className="rounded-full bg-ink px-4 py-2 text-xs font-bold text-paper shadow-lg hover:bg-accent hover:text-ink">
+            Colors
+          </button>
+        </div>
       )}
       {loginOpen && <LoginModal onClose={() => setLoginOpen(false)} />}
       {editing && editingValue && (
         <EditModal
           key={JSON.stringify(editing)}
-          title={editing.section === 'profile' ? 'Edit profile' : 'index' in editing && editing.index === -1 ? 'New post' : 'Edit post'}
+          title={editing.section === 'profile' ? 'Edit profile' : editing.section === 'theme' ? 'Color scheme' : 'index' in editing && editing.index === -1 ? 'New post' : 'Edit post'}
           value={editingValue}
           onSave={saveItem}
           onClose={() => setEditing(null)}
