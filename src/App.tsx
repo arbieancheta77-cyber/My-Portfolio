@@ -719,9 +719,11 @@ export default function App() {
             <div className="relative lg:py-10">
               {editProfile}
               <p className="font-mono text-xs uppercase tracking-[.16em] text-accent">About me</p>
+              {/* Temporarily hidden: about title
               <h2 className="mt-4 text-5xl font-semibold leading-[.95] tracking-[-.06em] md:text-7xl">
                 {profile.aboutTitle}
               </h2>
+              */}
               <p className="mt-7 max-w-[650px] text-lg leading-relaxed text-ink/58">
                 {profile.aboutText}
               </p>
