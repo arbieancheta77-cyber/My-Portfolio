@@ -694,7 +694,8 @@ export default function App() {
           {addButton('services')}
         </section>
 
-        <section id="about" className="mx-auto max-w-[1400px] px-5 py-20 md:px-8 md:py-28">
+        {/* Temporarily hidden: about section */}
+        <section id="about" hidden className="mx-auto max-w-[1400px] px-5 py-20 md:px-8 md:py-28">
           <div className="grid items-center gap-8 lg:grid-cols-[.92fr_1.08fr] lg:gap-16">
             <div className="glass-dark relative min-h-[500px] overflow-hidden rounded-[28px] p-8 text-paper">
               <div className="profile-grid absolute inset-0 opacity-50" />
