@@ -504,7 +504,7 @@ export default function App() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [editing, setEditing] = useState<Editing | null>(null);
   const isAdmin = !!session;
-  const { profile, theme, services, projects, certifications, skillGroups, experience, contactLinks, gallery } = content;
+  const { profile, theme, services, projects, certifications, skillGroups, experience, contactLinks } = content;
   const filters = ['All platforms', ...new Set(projects.map((project) => project.platform))];
 
   useEffect(() => {
@@ -648,9 +648,9 @@ export default function App() {
               <div className="hero-orbit pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-paper/10">
                 <div className="absolute bottom-[82px] right-[62px] h-3 w-3 rounded-full bg-accent" />
               </div>
-              <div className="profile-photo-frame relative z-10 flex h-64 w-64 items-center justify-center overflow-hidden rounded-full md:h-80 md:w-80">
+              <div className="profile-photo-frame relative z-10 flex h-64 w-64 items-center justify-center overflow-hidden rounded-[28px] md:h-80 md:w-80">
                 {profile.photo ? (
-                  <img src={profile.photo} alt={`${profile.firstName} ${profile.lastName}`} className="h-full w-full rounded-full object-cover" />
+                  <img src={profile.photo} alt={`${profile.firstName} ${profile.lastName}`} className="h-full w-full object-cover" />
                 ) : (
                   <span className="text-7xl font-semibold tracking-[-.09em] text-paper/85">
                     {profile.firstName[0]}
@@ -949,31 +949,6 @@ export default function App() {
             {addButton('certifications')}
           </div>
         </section>
-
-        {(isAdmin || gallery.some((photo) => photo.image)) && (
-          <section id="gallery" className="mx-auto max-w-[1400px] px-5 py-20 md:px-8 md:py-28">
-            <div className="mb-12 text-center">
-              <p className="font-mono text-xs uppercase tracking-[.16em] text-accent">Gallery</p>
-              <h2 className="mt-3 text-5xl font-semibold tracking-[-.055em] md:text-6xl">Photos</h2>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {gallery.map((photo, index) =>
-                !photo.image && !isAdmin ? null : (
-                  <figure key={index} className="glass-panel hover-card relative rounded-[22px] border border-paper/55 p-3">
-                    {actions('gallery', index)}
-                    {photo.image ? (
-                      <img src={photo.image} alt={photo.caption} className="aspect-[4/3] w-full rounded-2xl object-cover" />
-                    ) : (
-                      <div className="flex aspect-[4/3] items-center justify-center rounded-2xl bg-ink text-sm text-paper/55">Add a photo</div>
-                    )}
-                    {photo.caption && <figcaption className="px-2 pb-1 pt-3 text-sm text-ink/60">{photo.caption}</figcaption>}
-                  </figure>
-                ),
-              )}
-            </div>
-            {addButton('gallery')}
-          </section>
-        )}
 
         <section id="contact" className="px-3 pb-3 pt-20 md:pt-28">
           <div className="relative overflow-hidden rounded-[30px] bg-accent px-5 py-16 text-ink md:px-12 md:py-20">
