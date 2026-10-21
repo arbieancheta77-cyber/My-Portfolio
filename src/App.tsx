@@ -648,9 +648,9 @@ export default function App() {
               <div className="hero-orbit pointer-events-none absolute left-1/2 top-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-paper/10">
                 <div className="absolute bottom-[82px] right-[62px] h-3 w-3 rounded-full bg-accent" />
               </div>
-              <div className="profile-photo-frame relative z-10 flex h-64 w-64 items-center justify-center overflow-hidden rounded-[28px] md:h-80 md:w-80">
+              <div className="profile-photo-frame relative z-10 flex h-64 w-64 items-center justify-center overflow-hidden rounded-full md:h-80 md:w-80">
                 {profile.photo ? (
-                  <img src={profile.photo} alt={`${profile.firstName} ${profile.lastName}`} className="h-full w-full object-cover" />
+                  <img src={profile.photo} alt={`${profile.firstName} ${profile.lastName}`} className="h-full w-full rounded-full object-cover" />
                 ) : (
                   <span className="text-7xl font-semibold tracking-[-.09em] text-paper/85">
                     {profile.firstName[0]}
