@@ -1,4 +1,4 @@
-import { useEffect, useState, type SVGProps } from 'react';
+import { useEffect, useState, type ReactNode, type SVGProps } from 'react';
 import { createPortal } from 'react-dom';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from './supabase';
@@ -313,6 +313,65 @@ function WorkflowVisual({ project }: { project: (typeof projects)[number] }) {
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+function SkillDeck({ groups, actions }: { groups: typeof skillGroups; actions: (index: number) => ReactNode }) {
+  const [top, setTop] = useState(0);
+  const [moving, setMoving] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const n = groups.length;
+  const t = n ? top % n : 0; // groups can shrink while editing
+  const shuffle = () => n > 1 && setMoving(true);
+
+  useEffect(() => {
+    if (paused || n < 2) return;
+    const id = setInterval(() => setMoving(true), 3500);
+    return () => clearInterval(id);
+  }, [paused, n]);
+
+  const stackTransform = (p: number) => `translateY(${p * 14}px) scale(${1 - p * 0.05}) rotate(${p % 2 ? 2.5 : -2.5 * Math.sign(p)}deg)`;
+
+  return (
+    <div className="mx-auto flex max-w-md flex-col items-center" onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}>
+      <div className="relative h-80 w-full">
+        {groups.map((group, index) => {
+          const p = (index - t + n) % n;
+          const animating = moving && p === 0;
+          return (
+            <article
+              key={index}
+              onClick={(e) => p === 0 && !(e.target as Element).closest('button') && shuffle()}
+              onAnimationEnd={() => {
+                setMoving(false);
+                setTop(t + 1);
+              }}
+              className={`deck-card glass-panel absolute inset-0 rounded-[22px] border border-paper/55 bg-paper p-6 ${p === 0 ? 'cursor-pointer' : ''} ${animating ? 'is-shuffling' : ''}`}
+              style={{ zIndex: n - p, transform: stackTransform(p), opacity: p > 3 ? 0 : 1, ['--deck-back' as string]: stackTransform(n - 1) }}
+            >
+              {actions(index)}
+              <div className="flex items-start justify-between">
+                <WorkflowIcon className="h-8 w-8 text-accent" />
+                <span className="font-mono text-xs text-ink/30">0{index + 1}</span>
+              </div>
+              <h3 className="mt-10 text-xl font-semibold tracking-[-.03em]">{group.title}</h3>
+              <div className="mt-5 flex flex-wrap gap-2">
+                {group.skills.map((skill) => (
+                  <span key={skill} className="rounded-full border border-ink/10 bg-paper/35 px-3 py-2 text-xs text-ink/60">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      {n > 1 && (
+        <button type="button" onClick={shuffle} className="mt-12 rounded-full border border-ink/15 px-5 py-2 font-mono text-xs uppercase tracking-[.16em] text-ink/60 transition hover:border-accent hover:text-accent">
+          Shuffle · {t + 1}/{n}
+        </button>
+      )}
     </div>
   );
 }
@@ -825,25 +884,7 @@ export default function App() {
             <p className="font-mono text-xs uppercase tracking-[.16em] text-accent">Toolkit</p>
             <h2 className="mt-3 text-5xl font-semibold tracking-[-.055em] md:text-6xl">Skills</h2>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {skillGroups.map((group, index) => (
-              <article key={index} className="glass-panel hover-card relative min-h-64 rounded-[22px] border border-paper/55 p-6">
-                {actions('skillGroups', index)}
-                <div className="flex items-start justify-between">
-                  <WorkflowIcon className="h-8 w-8 text-accent" />
-                  <span className="font-mono text-xs text-ink/30">0{index + 1}</span>
-                </div>
-                <h3 className="mt-10 text-xl font-semibold tracking-[-.03em]">{group.title}</h3>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  {group.skills.map((skill) => (
-                    <span key={skill} className="rounded-full border border-ink/10 bg-paper/35 px-3 py-2 text-xs text-ink/60">
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-              </article>
-            ))}
-          </div>
+          <SkillDeck groups={skillGroups} actions={(index) => actions('skillGroups', index)} />
           {addButton('skillGroups')}
         </section>
 

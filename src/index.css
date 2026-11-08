@@ -209,6 +209,24 @@ button {
   transform: scale(1.04);
 }
 
+.deck-card {
+  transition:
+    transform 450ms cubic-bezier(.2, .7, .2, 1),
+    opacity 300ms ease;
+}
+
+/* top card slides out, drops behind the stack (z-index flips mid-way), then settles at the back */
+.deck-card.is-shuffling {
+  animation: deck-shuffle 700ms cubic-bezier(.4, 0, .2, 1) forwards;
+}
+
+@keyframes deck-shuffle {
+  0% { transform: none; z-index: 100; }
+  45% { transform: translateX(105%) rotate(14deg); z-index: 100; }
+  55% { transform: translateX(105%) rotate(14deg); z-index: 0; }
+  100% { transform: var(--deck-back); z-index: 0; }
+}
+
 .process-row {
   transition: padding 220ms ease;
 }
@@ -238,8 +256,14 @@ button {
 
   .hover-card,
   .hover-card img,
-  .process-row {
+  .process-row,
+  .deck-card {
     transition: none;
+  }
+
+  /* 1ms keeps onAnimationEnd firing so the deck still advances */
+  .deck-card.is-shuffling {
+    animation-duration: 1ms;
   }
 
   .hover-card:hover,
